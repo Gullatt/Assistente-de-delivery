@@ -1,0 +1,78 @@
+{
+  "Comment": "Assistente de Delivery",
+  "StartAt": "Receber Pedido",
+  "States": {
+    "Receber Pedido": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:REGION:ACCOUNT_ID:function:ReceberPedido",
+      "Next": "Validar Pedido"
+    },
+    "Validar Pedido": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:REGION:ACCOUNT_ID:function:ValidarPedido",
+      "ResultPath": "$.validation_result",
+      "Next": "Verificar Validação"
+    },
+    "Verificar Validação": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.validation_result.is_valid",
+          "BooleanEquals": true,
+          "Next": "Processar Pagamento"
+        }
+      ],
+      "Default": "Pedido Inválido"
+    },
+    "Processar Pagamento": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:REGION:ACCOUNT_ID:function:ProcessarPagamento",
+      "ResultPath": "$.payment_result",
+      "Next": "Verificar Pagamento"
+    },
+    "Verificar Pagamento": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.payment_result.payment_success",
+          "BooleanEquals": true,
+          "Next": "Atualizar Status do Pedido"
+        }
+      ],
+      "Default": "Pagamento Falhou"
+    },
+    "Atualizar Status do Pedido": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:REGION:ACCOUNT_ID:function:AtualizarStatus",
+      "Next": "Preparar Entrega"
+    },
+    "Preparar Entrega": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:REGION:ACCOUNT_ID:function:PrepararEntrega",
+      "Next": "Agendar Entrega"
+    },
+    "Agendar Entrega": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:REGION:ACCOUNT_ID:function:AgendarEntrega",
+      "Next": "Notificar Cliente"
+    },
+    "Notificar Cliente": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:REGION:ACCOUNT_ID:function:NotificarCliente",
+      "Next": "Finalizar Pedido"
+    },
+    "Pedido Inválido": {
+      "Type": "Fail",
+      "Error": "InvalidOrderError",
+      "Cause": "O pedido recebido é inválido."
+    },
+    "Pagamento Falhou": {
+      "Type": "Fail",
+      "Error": "PaymentError",
+      "Cause": "O pagamento falhou."
+    },
+    "Finalizar Pedido": {
+      "Type": "Succeed"
+    }
+  }
+}
